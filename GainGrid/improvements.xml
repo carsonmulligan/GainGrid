@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<improvements>
+    <!-- 1. WEEKLY VIEW -->
+    <feature name="WeeklyProgressView">
+        <description>
+            A calendar-style weekly view showing completed workouts and progress at a glance.
+            Includes a summary of total sets, weight lifted, and workout completion status.
+        </description>
+        <implementation>
+            <view name="WeeklyProgressView">
+                <components>
+                    <calendar>
+                        <weekView>
+                            <dayCell>
+                                <workoutName>Monday (Chest)</workoutName>
+                                <completionStatus>true/false</completionStatus>
+                                <totalSets>Integer</totalSets>
+                                <totalWeight>String (e.g., "2000 lbs")</totalWeight>
+                            </dayCell>
+                        </weekView>
+                        <statistics>
+                            <weeklyTotal>Total weight lifted</weeklyTotal>
+                            <weeklyCompletion>Percentage complete</weeklyCompletion>
+                            <streakCount>Consecutive days</streakCount>
+                        </statistics>
+                    </calendar>
+                </components>
+            </view>
+        </implementation>
+    </feature>
+
+    <!-- 2. PROGRESS TRACKER -->
+    <feature name="ProgressTracker">
+        <description>
+            Track progress over time for each exercise, including weight progression,
+            volume progression, and personal records (PRs).
+        </description>
+        <implementation>
+            <models>
+                <model name="ExerciseProgress">
+                    <properties>
+                        <property name="exerciseName" type="String"/>
+                        <property name="history" type="[ProgressEntry]"/>
+                        <property name="personalRecords" type="[PRRecord]"/>
+                    </properties>
+                </model>
+                <model name="ProgressEntry">
+                    <properties>
+                        <property name="date" type="Date"/>
+                        <property name="weight" type="String"/>
+                        <property name="reps" type="Int"/>
+                        <property name="totalVolume" type="Double"/>
+                    </properties>
+                </model>
+                <model name="PRRecord">
+                    <properties>
+                        <property name="type" type="String"/> <!-- "Weight", "Volume", "Reps" -->
+                        <property name="value" type="Double"/>
+                        <property name="date" type="Date"/>
+                        <property name="notes" type="String?"/>
+                    </properties>
+                </model>
+            </models>
+            <views>
+                <progressCharts>
+                    <weightProgression>Line chart showing weight over time</weightProgression>
+                    <volumeProgression>Bar chart showing volume per session</volumeProgression>
+                    <prTimeline>Timeline of achieved PRs</prTimeline>
+                </progressCharts>
+            </views>
+        </implementation>
+    </feature>
+
+    <!-- 3. LOCAL JSON STORAGE -->
+    <feature name="LocalStorage">
+        <description>
+            Implement robust local storage using JSON files for user data, workouts,
+            and progress tracking. Each user gets their own directory with separate
+            files for different data types.
+        </description>
+        <implementation>
+            <fileStructure>
+                <directory name="Users">
+                    <userDirectory name="{userID}">
+                        <file name="profile.json">
+                            <content>
+                                <userId>UUID</userId>
+                                <name>String</name>
+                                <joinDate>Date</joinDate>
+                                <preferences>JSON Object</preferences>
+                            </content>
+                        </file>
+                        <file name="workouts.json">
+                            <content>
+                                <workoutHistory>[WorkoutSession]</workoutHistory>
+                                <customWorkoutPlans>[WorkoutPlan]</customWorkoutPlans>
+                            </content>
+                        </file>
+                        <file name="progress.json">
+                            <content>
+                                <exerciseProgress>[ExerciseProgress]</exerciseProgress>
+                                <personalRecords>[PRRecord]</personalRecords>
+                            </content>
+                        </file>
+                        <file name="commits.json">
+                            <content>
+                                <dailyCommits>[LocalCommit]</dailyCommits>
+                            </content>
+                        </file>
+                    </userDirectory>
+                </directory>
+            </fileStructure>
+            <service name="LocalStorageService">
+                <methods>
+                    <method name="saveUserData(userId: UUID, data: UserData)"/>
+                    <method name="loadUserData(userId: UUID) -> UserData"/>
+                    <method name="saveWorkoutSession(userId: UUID, session: WorkoutSession)"/>
+                    <method name="updateProgress(userId: UUID, progress: ExerciseProgress)"/>
+                    <method name="saveCommit(userId: UUID, commit: LocalCommit)"/>
+                </methods>
+            </service>
+        </implementation>
+    </feature>
+
+    <!-- 4. ACTIVITY LOG IMPROVEMENTS -->
+    <feature name="EnhancedActivityLog">
+        <description>
+            Improve the activity log to show more detailed information about commits
+            and provide better visualization of workout patterns.
+        </description>
+        <implementation>
+            <commitTypes>
+                <type name="WorkoutComplete">
+                    <color>39D353</color>
+                    <weight>3</weight>
+                </type>
+                <type name="PersonalRecord">
+                    <color>26A641</color>
+                    <weight>5</weight>
+                </type>
+                <type name="PartialWorkout">
+                    <color>006D32</color>
+                    <weight>1</weight>
+                </type>
+            </commitTypes>
+            <visualization>
+                <heatmap>
+                    <colorScheme>
+                        <level1>0-1 commits: #0E4429</level1>
+                        <level2>2-3 commits: #006D32</level2>
+                        <level3>4-5 commits: #26A641</level3>
+                        <level4>6+ commits: #39D353</level4>
+                    </colorScheme>
+                </heatmap>
+                <details>
+                    <commitDetails>
+                        <date>Date</date>
+                        <type>CommitType</type>
+                        <summary>String</summary>
+                        <achievements>[String]</achievements>
+                    </commitDetails>
+                </details>
+            </visualization>
+        </implementation>
+    </feature>
+
+    <!-- 5. IMPLEMENTATION ORDER -->
+    <implementationPlan>
+        <phase1>
+            1. Set up LocalStorage structure and service
+            2. Migrate current data to new JSON storage format
+            3. Implement user profiles and multi-user support
+        </phase1>
+        <phase2>
+            1. Create WeeklyProgressView
+            2. Enhance activity log with new commit types
+            3. Implement detailed commit visualization
+        </phase2>
+        <phase3>
+            1. Build ProgressTracker models and views
+            2. Add charts and progress visualization
+            3. Implement PR tracking and celebrations
+        </phase3>
+    </implementationPlan>
+</improvements> 
