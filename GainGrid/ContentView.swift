@@ -237,6 +237,14 @@ class WorkoutViewModel: ObservableObject {
     @Published var workoutPlan: [String: (warmUp: String, workouts: [String], cardio: String)] = [:]
     @Published var currentSets: [WorkoutSet] = []
     @Published var commitsByDate: [Date: Int] = [:]
+    @Published var selectedDay: String? {
+        didSet {
+            // Clear current sets when changing days
+            if oldValue != selectedDay {
+                currentSets.removeAll()
+            }
+        }
+    }
     
     init() {
         loadWorkoutPlan()
@@ -262,6 +270,20 @@ class WorkoutViewModel: ObservableObject {
         commitsByDate = Dictionary(grouping: commits) { commit in
             calendar.startOfDay(for: commit.timestamp)
         }.mapValues { $0.count }
+    }
+    
+    func getTodaysProgress(for day: String) -> DayProgress {
+        let hasWorkout = !currentSets.isEmpty && selectedDay == day
+        
+        if hasWorkout {
+            let totalSets = currentSets.count
+            let totalWeight = currentSets.reduce(0) { total, set in
+                total + (Int(set.weight.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) ?? 0)
+            }
+            return DayProgress(isComplete: false, completedSets: totalSets, totalWeight: totalWeight)
+        } else {
+            return DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
+        }
     }
     
     func addSet(exerciseName: String, weight: String, reps: Int, notes: String?) {
