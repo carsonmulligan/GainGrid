@@ -128,7 +128,7 @@ class WorkoutViewModel: ObservableObject {
         if workoutHistory[day] == nil {
             workoutHistory[day] = []
         }
-        let workout = WorkoutHistory(date: Date(), sets: currentSets)
+        let workout = WorkoutHistory(id: UUID(), date: Date(), sets: currentSets)
         workoutHistory[day]?.append(workout)
         
         // Create and save commit
