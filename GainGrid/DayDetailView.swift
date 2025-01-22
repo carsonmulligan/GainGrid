@@ -12,9 +12,26 @@ struct DayDetailView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    if let exercises = viewModel.workoutPlan[day] {
-                        ForEach(exercises, id: \.self) { exercise in
+                    if let dayPlan = viewModel.workoutPlan[day] {
+                        // Warm-up section
+                        if !dayPlan.warmUp.isEmpty {
+                            Section(header: Text("Warm-up").font(.headline)) {
+                                Text(dayPlan.warmUp)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        // Main workouts
+                        ForEach(dayPlan.workouts, id: \.self) { exercise in
                             ExerciseCommitCard(exerciseName: exercise, day: day)
+                        }
+                        
+                        // Cardio section
+                        if !dayPlan.cardio.isEmpty {
+                            Section(header: Text("Cardio").font(.headline)) {
+                                Text(dayPlan.cardio)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         
                         // Commit Button

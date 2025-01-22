@@ -61,8 +61,4 @@ struct WorkoutPlanSettings: Codable {
     }
     
     static let empty = WorkoutPlanSettings(days: [:])
-}
-
-struct DayProgress {
-    let completedSets: Int?
 } 
