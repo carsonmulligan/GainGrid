@@ -21,7 +21,7 @@ class LocalDataService {
            let plan = try? JSONSerialization.jsonObject(with: data) as? [String: [String: Any]] {
             return plan
         }
-        return defaultWorkoutPlan
+        return Self.defaultWorkoutPlan
     }
     
     // MARK: - Workout History Management

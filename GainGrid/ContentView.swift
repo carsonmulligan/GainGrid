@@ -101,7 +101,7 @@ struct ContentView: View {
                             
                             if !viewModel.currentSets.isEmpty {
                                 Button(action: {
-                                    viewModel.commitSession()
+                                    viewModel.commitSession(for: selectedDay)
                                 }) {
                                     Text("Commit Session")
                                         .font(.headline)
@@ -228,103 +228,6 @@ struct AddSetView: View {
                 .disabled(exerciseName.isEmpty || weight.isEmpty)
             )
         }
-    }
-}
-
-class WorkoutViewModel: ObservableObject {
-    private let dataService = LocalDataService()
-    
-    @Published var workoutPlan: [String: (warmUp: String, workouts: [String], cardio: String)] = [:]
-    @Published var currentSets: [WorkoutSet] = []
-    @Published var commitsByDate: [Date: Int] = [:]
-    @Published var selectedDay: String? {
-        didSet {
-            // Clear current sets when changing days
-            if oldValue != selectedDay {
-                currentSets.removeAll()
-            }
-        }
-    }
-    
-    init() {
-        loadWorkoutPlan()
-        loadCommits()
-    }
-    
-    private func loadWorkoutPlan() {
-        // In a real app, we would parse the complete plan from LocalDataService.defaultWorkoutPlan
-        // For now, we'll just use the Monday example
-        if let mondayPlan = LocalDataService.defaultWorkoutPlan["Monday (Chest)"] {
-            workoutPlan["Monday (Chest)"] = (
-                warmUp: mondayPlan["Warm-Up"] as? String ?? "",
-                workouts: mondayPlan["Workouts"] as? [String] ?? [],
-                cardio: mondayPlan["Cardio"] as? String ?? ""
-            )
-        }
-    }
-    
-    private func loadCommits() {
-        let commits = dataService.loadAllCommits()
-        let calendar = Calendar.current
-        
-        commitsByDate = Dictionary(grouping: commits) { commit in
-            calendar.startOfDay(for: commit.timestamp)
-        }.mapValues { $0.count }
-    }
-    
-    func getTodaysProgress(for day: String) -> DayProgress {
-        let hasWorkout = !currentSets.isEmpty && selectedDay == day
-        
-        if hasWorkout {
-            let totalSets = currentSets.count
-            let totalWeight = currentSets.reduce(0) { total, set in
-                total + (Int(set.weight.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) ?? 0)
-            }
-            return DayProgress(isComplete: false, completedSets: totalSets, totalWeight: totalWeight)
-        } else {
-            return DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
-        }
-    }
-    
-    func addSet(exerciseName: String, weight: String, reps: Int, notes: String?) {
-        let newSet = WorkoutSet(
-            exerciseName: exerciseName,
-            notes: notes,
-            weight: weight,
-            reps: reps,
-            date: Date()
-        )
-        currentSets.append(newSet)
-    }
-    
-    func updateSet(existingSet: WorkoutSet, exerciseName: String, weight: String, reps: Int, notes: String?) {
-        if let index = currentSets.firstIndex(where: { $0.id == existingSet.id }) {
-            let updatedSet = WorkoutSet(
-                id: existingSet.id,
-                exerciseName: exerciseName,
-                notes: notes,
-                weight: weight,
-                reps: reps,
-                date: existingSet.date
-            )
-            currentSets[index] = updatedSet
-        }
-    }
-    
-    func commitSession() {
-        guard !currentSets.isEmpty else { return }
-        
-        let markdown = dataService.generateMarkdownFromSets(currentSets)
-        let commit = LocalCommit(
-            message: "Completed workout session",
-            timestamp: Date(),
-            fileName: "workout_\(Date().timeIntervalSince1970).md",
-            content: markdown
-        )
-        
-        dataService.saveCommit(commit)
-        currentSets.removeAll()
-        loadCommits()
     }
 }
 
