@@ -9,7 +9,7 @@ struct DayProgress {
 class WorkoutViewModel: ObservableObject {
     private let dataService = LocalDataService()
     
-    @Published var workoutPlan: [String: (warmUp: String, workouts: [String], cardio: String)] = [:]
+    @Published var workoutPlan: [String: WorkoutPlanSettings.DayPlan] = [:]
     @Published var currentSets: [WorkoutSet] = []
     @Published var commitsByDate: [Date: Int] = [:]
     @Published var selectedDay: String? {
@@ -34,9 +34,9 @@ class WorkoutViewModel: ObservableObject {
     private func loadWorkoutPlan() {
         let plan = dataService.loadWorkoutPlan()
         
-        // Convert the Any dictionary to our typed tuple format
+        // Convert the Any dictionary to our typed format
         for (day, details) in plan {
-            workoutPlan[day] = (
+            workoutPlan[day] = WorkoutPlanSettings.DayPlan(
                 warmUp: details["Warm-Up"] as? String ?? "",
                 workouts: details["Workouts"] as? [String] ?? [],
                 cardio: details["Cardio"] as? String ?? ""

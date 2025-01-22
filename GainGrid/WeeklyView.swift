@@ -18,12 +18,8 @@ struct WeeklyView: View {
                             DayCard(
                                 day: day,
                                 isSelected: day == selectedDay,
-                                workoutPlan: (
-                                    warmUp: "",
-                                    workouts: viewModel.workoutPlan[day] ?? [],
-                                    cardio: ""
-                                ),
-                                progress: DayProgress(completedSets: nil)
+                                workoutPlan: viewModel.workoutPlan[day] ?? WorkoutPlanSettings.DayPlan(warmUp: "", workouts: [], cardio: ""),
+                                progress: DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
                             )
                             .onTapGesture {
                                 selectedDay = day
