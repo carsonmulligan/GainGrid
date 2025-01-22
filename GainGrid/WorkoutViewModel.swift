@@ -1,11 +1,5 @@
 import Foundation
 
-struct DayProgress {
-    let isComplete: Bool
-    let completedSets: Int?
-    let totalWeight: Int?
-}
-
 class WorkoutViewModel: ObservableObject {
     private let dataService = LocalDataService()
     

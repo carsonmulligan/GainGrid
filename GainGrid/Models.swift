@@ -1,5 +1,11 @@
 import Foundation
 
+struct DayProgress {
+    let isComplete: Bool
+    let completedSets: Int?
+    let totalWeight: Int?
+}
+
 struct WorkoutSet: Identifiable, Codable {
     let id: UUID
     let exerciseName: String
