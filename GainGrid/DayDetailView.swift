@@ -46,6 +46,11 @@ struct DayDetailView: View {
     }
 }
 
+#Preview {
+    DayDetailView(day: "Monday")
+        .environmentObject(WorkoutViewModel())
+}
+
 struct ExerciseCommitCard: View {
     let exerciseName: String
     let day: String
