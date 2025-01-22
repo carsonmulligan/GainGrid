@@ -24,9 +24,16 @@ struct WorkoutSet: Identifiable, Codable {
     }
 }
 
-struct WorkoutHistory: Codable {
+struct WorkoutHistory: Identifiable, Codable {
+    let id: UUID
     let date: Date
     let sets: [WorkoutSet]
+    
+    init(id: UUID = UUID(), date: Date, sets: [WorkoutSet]) {
+        self.id = id
+        self.date = date
+        self.sets = sets
+    }
 }
 
 struct LocalCommit: Identifiable, Codable {
