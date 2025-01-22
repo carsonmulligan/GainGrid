@@ -18,6 +18,11 @@ struct WorkoutSet: Identifiable, Codable {
     }
 }
 
+struct WorkoutHistory: Codable {
+    let date: Date
+    let sets: [WorkoutSet]
+}
+
 struct LocalCommit: Identifiable, Codable {
     let id: UUID
     let message: String
@@ -43,4 +48,17 @@ struct WorkoutDay: Codable {
     }
     
     let workouts: [String: Workout]
+}
+
+// Settings structure for workout plan customization
+struct WorkoutPlanSettings: Codable {
+    var days: [String: DayPlan]
+    
+    struct DayPlan: Codable {
+        var warmUp: String
+        var workouts: [String]
+        var cardio: String
+    }
+    
+    static let empty = WorkoutPlanSettings(days: [:])
 } 

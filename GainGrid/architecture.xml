@@ -224,7 +224,7 @@
   <!-- 
     7) PSEUDO-FUNCTIONS / LOGIC 
   -->
-  <pseudoFunctions>
+  <pseudoFunctionms>
     <function name="viewWorkoutPlan(day)">
       <description>Display warmup, workouts, cardio for the selected day from the default dictionary.</description>
     </function>
