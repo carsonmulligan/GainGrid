@@ -49,6 +49,7 @@ struct WeeklyView: View {
                             backgroundColor: backgroundColor
                         ) {
                             selectedDay = day
+                            viewModel.selectedDay = day
                             showingDayDetail = true
                         }
                         Divider()
@@ -136,31 +137,6 @@ struct DayProgress {
     let isComplete: Bool
     let completedSets: Int?
     let totalWeight: Int?
-}
-
-extension WorkoutViewModel {
-    var selectedDay: String? {
-        didSet {
-            // Clear current sets when changing days
-            if oldValue != selectedDay {
-                currentSets.removeAll()
-            }
-        }
-    }
-    
-    func getTodaysProgress(for day: String) -> DayProgress {
-        let hasWorkout = !currentSets.isEmpty && selectedDay == day
-        
-        if hasWorkout {
-            let totalSets = currentSets.count
-            let totalWeight = currentSets.reduce(0) { total, set in
-                total + (Int(set.weight.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) ?? 0)
-            }
-            return DayProgress(isComplete: false, completedSets: totalSets, totalWeight: totalWeight)
-        } else {
-            return DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
-        }
-    }
 }
 
 struct DayDetailView: View {
