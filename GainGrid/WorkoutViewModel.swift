@@ -72,7 +72,7 @@ class WorkoutViewModel: ObservableObject {
         }
         
         return groupedSets.map { date, sets in
-            WorkoutHistory(date: date, sets: sets.sorted { $0.date < $1.date })
+            WorkoutHistory(id: UUID(), date: date, sets: sets.sorted { $0.date < $1.date })
         }.sorted { $0.date > $1.date }
     }
     
