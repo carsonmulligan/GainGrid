@@ -99,7 +99,7 @@ struct ExerciseHistoryView: View {
             List {
                 ForEach(viewModel.getExerciseHistory(for: exerciseName)) { history in
                     Section(header: Text(history.date.formatted(date: .abbreviated, time: .omitted))) {
-                        ForEach(history.sets) { set in
+                        ForEach(history.sets.filter { $0.exerciseName == exerciseName }) { set in
                             HStack {
                                 Text("\(set.weight)lbs")
                                     .bold()
