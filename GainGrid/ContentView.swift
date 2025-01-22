@@ -8,8 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var viewModel = WorkoutViewModel()
+    
     var body: some View {
         WeeklyView()
+            .environmentObject(viewModel)
     }
 }
 

@@ -5,47 +5,16 @@ struct DayDetailView: View {
     @EnvironmentObject var viewModel: WorkoutViewModel
     let day: String
     
+    private let backgroundColor = Color(.systemBackground)
+    private let textColor = Color(.label)
+    
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    if let plan = viewModel.workoutPlan[day] {
-                        // Warm-up Section
-                        if !plan.warmUp.isEmpty {
-                            Text("Warm-up")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal)
-                            
-                            Text(plan.warmUp)
-                                .padding()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color(.systemBackground))
-                                .cornerRadius(12)
-                        }
-                        
-                        // Workouts Section
-                        Text("Workouts")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal)
-                        
-                        ForEach(plan.workouts, id: \.self) { exercise in
+                    if let exercises = viewModel.workoutPlan[day] {
+                        ForEach(exercises, id: \.self) { exercise in
                             ExerciseCommitCard(exerciseName: exercise, day: day)
-                        }
-                        
-                        // Cardio Section
-                        if !plan.cardio.isEmpty {
-                            Text("Cardio")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal)
-                            
-                            Text(plan.cardio)
-                                .padding()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color(.systemBackground))
-                                .cornerRadius(12)
                         }
                         
                         // Commit Button
