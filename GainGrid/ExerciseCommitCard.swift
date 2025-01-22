@@ -143,25 +143,32 @@ struct ExerciseHistoryView: View {
             List {
                 ForEach(viewModel.getExerciseHistory(for: exerciseName)) { history in
                     Section(header: Text(history.date.formatted(date: .abbreviated, time: .omitted))) {
-                        ForEach(history.sets.filter { $0.exerciseName == exerciseName }) { set in
-                            HStack {
-                                Text("\(set.weight)lbs")
-                                    .bold()
-                                Text("×")
-                                Text("\(set.reps) reps")
-                                if let notes = set.notes {
-                                    Spacer()
-                                    Text(notes)
-                                        .foregroundColor(.secondary)
-                                        .italic()
-                                }
-                            }
+                        ForEach(history.sets) { set in
+                            HistorySetRow(set: set)
                         }
                     }
                 }
             }
-            .navigationTitle("\(exerciseName) History")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("History for \(exerciseName)")
+        }
+    }
+}
+
+struct HistorySetRow: View {
+    let set: WorkoutSet
+    
+    var body: some View {
+        HStack {
+            Text("\(set.weight)lbs")
+                .bold()
+            Text("×")
+            Text("\(set.reps) reps")
+            if let notes = set.notes {
+                Spacer()
+                Text(notes)
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
         }
     }
 }
