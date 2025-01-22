@@ -15,44 +15,23 @@ struct ExerciseCommitCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(exerciseName)
-                    .font(.headline)
-                Spacer()
-                Button(action: { showingHistory.toggle() }) {
-                    Image(systemName: "clock.arrow.circlepath")
-                }
-                Button(action: { showingSetConfig.toggle() }) {
-                    Image(systemName: "slider.horizontal.3")
-                }
-            }
+            ExerciseHeader(
+                exerciseName: exerciseName,
+                showingHistory: $showingHistory,
+                showingSetConfig: $showingSetConfig
+            )
             
-            HStack {
-                TextField("Weight", text: $weight)
-                    .keyboardType(.decimalPad)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 80)
-                
-                Stepper("Reps: \(reps)", value: $reps, in: 1...20)
-                    .frame(width: 150)
-            }
+            ExerciseInputFields(
+                weight: $weight,
+                reps: $reps,
+                notes: $notes
+            )
             
-            TextField("Notes (optional)", text: $notes)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            
-            HStack {
-                Text("Set \(currentSet) of \(totalSets)")
-                    .foregroundColor(.secondary)
-                Spacer()
-                Button(action: commitSet) {
-                    Text(currentSet < totalSets ? "Next Set" : "Complete")
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(Color.blue)
-                        .cornerRadius(8)
-                }
-            }
+            ExerciseControls(
+                currentSet: currentSet,
+                totalSets: totalSets,
+                onCommit: commitSet
+            )
         }
         .padding()
         .background(Color(.systemBackground))
@@ -86,6 +65,71 @@ struct ExerciseCommitCard: View {
             // Reset for next exercise
             currentSet = 1
             notes = ""
+        }
+    }
+}
+
+struct ExerciseHeader: View {
+    let exerciseName: String
+    @Binding var showingHistory: Bool
+    @Binding var showingSetConfig: Bool
+    
+    var body: some View {
+        HStack {
+            Text(exerciseName)
+                .font(.headline)
+            Spacer()
+            Button(action: { showingHistory.toggle() }) {
+                Image(systemName: "clock.arrow.circlepath")
+            }
+            Button(action: { showingSetConfig.toggle() }) {
+                Image(systemName: "slider.horizontal.3")
+            }
+        }
+    }
+}
+
+struct ExerciseInputFields: View {
+    @Binding var weight: String
+    @Binding var reps: Int
+    @Binding var notes: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                TextField("Weight", text: $weight)
+                    .keyboardType(.decimalPad)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(width: 80)
+                
+                Stepper("Reps: \(reps)", value: $reps, in: 1...20)
+                    .frame(width: 150)
+            }
+            
+            TextField("Notes (optional)", text: $notes)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+        }
+    }
+}
+
+struct ExerciseControls: View {
+    let currentSet: Int
+    let totalSets: Int
+    let onCommit: () -> Void
+    
+    var body: some View {
+        HStack {
+            Text("Set \(currentSet) of \(totalSets)")
+                .foregroundColor(.secondary)
+            Spacer()
+            Button(action: onCommit) {
+                Text(currentSet < totalSets ? "Next Set" : "Complete")
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .cornerRadius(8)
+            }
         }
     }
 }
