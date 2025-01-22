@@ -14,7 +14,9 @@ struct WeeklyView: View {
         "Tuesday (Shoulders)",
         "Wednesday (Legs)",
         "Thursday (Back)",
-        "Friday (Biceps & Triceps)"
+        "Friday (Biceps & Triceps)",
+        "Saturday (Rest/Run)",
+        "Sunday (Rest)"
     ]
     
     var body: some View {
@@ -137,123 +139,4 @@ struct DayProgress {
     let isComplete: Bool
     let completedSets: Int?
     let totalWeight: Int?
-}
-
-struct DayDetailView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var viewModel: WorkoutViewModel
-    let day: String
-    
-    @State private var showingAddSetSheet = false
-    @State private var selectedSet: WorkoutSet?
-    @State private var selectedExercise: String?
-    
-    private let backgroundColor = Color(hex: "0D1117")
-    private let textColor = Color(hex: "C9D1D9")
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Workout Plan
-                    if let plan = viewModel.workoutPlan[day] {
-                        WorkoutDayView(
-                            dayName: day,
-                            warmUp: plan.warmUp,
-                            workouts: plan.workouts,
-                            cardio: plan.cardio,
-                            onWorkoutTap: { exercise in
-                                selectedExercise = exercise
-                                selectedSet = nil
-                                showingAddSetSheet = true
-                            }
-                        )
-                    }
-                    
-                    // Current Sets
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Today's Sets")
-                            .font(.title2)
-                            .foregroundColor(textColor)
-                        
-                        ForEach(viewModel.currentSets) { set in
-                            Button(action: {
-                                selectedSet = set
-                                selectedExercise = nil
-                                showingAddSetSheet = true
-                            }) {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(set.exerciseName)
-                                            .font(.headline)
-                                        Text("\(set.weight) - \(set.reps) reps")
-                                            .font(.subheadline)
-                                        if let notes = set.notes {
-                                            Text(notes)
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        }
-                                    }
-                                    Spacer()
-                                    Image(systemName: "pencil.circle.fill")
-                                        .foregroundColor(.gray)
-                                        .imageScale(.large)
-                                }
-                                .padding()
-                                .background(Color(hex: "0E4429"))
-                                .cornerRadius(8)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                        
-                        Button(action: {
-                            selectedSet = nil
-                            selectedExercise = nil
-                            showingAddSetSheet = true
-                        }) {
-                            Text("Add Set")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(hex: "26A641"))
-                                .cornerRadius(8)
-                        }
-                        
-                        if !viewModel.currentSets.isEmpty {
-                            Button(action: {
-                                viewModel.commitSession()
-                                presentationMode.wrappedValue.dismiss()
-                            }) {
-                                Text("Commit Session")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color(hex: "39D353"))
-                                    .cornerRadius(8)
-                            }
-                        }
-                    }
-                    .padding()
-                }
-            }
-            .background(backgroundColor)
-            .sheet(isPresented: $showingAddSetSheet) {
-                AddSetView(viewModel: viewModel, existingSet: selectedSet, prefilledExercise: selectedExercise)
-            }
-            .navigationTitle(day)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                }
-            }
-        }
-        .onAppear {
-            viewModel.selectedDay = day
-        }
-    }
 } 
