@@ -21,7 +21,7 @@ struct WorkoutHistoryCard: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(8)
         .shadow(radius: 2)
     }
 } 
