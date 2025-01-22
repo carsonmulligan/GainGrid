@@ -45,7 +45,8 @@ struct WeeklyView: View {
                             day: day,
                             isSelected: selectedDay == day,
                             workoutPlan: viewModel.workoutPlan[day],
-                            todaysProgress: viewModel.getTodaysProgress(for: day)
+                            todaysProgress: viewModel.getTodaysProgress(for: day),
+                            backgroundColor: backgroundColor
                         ) {
                             selectedDay = day
                             showingDayDetail = true
@@ -85,6 +86,7 @@ struct DayCell: View {
     let isSelected: Bool
     let workoutPlan: (warmUp: String, workouts: [String], cardio: String)?
     let todaysProgress: DayProgress
+    let backgroundColor: Color
     let onTap: () -> Void
     
     private var dayAbbreviation: String {
@@ -137,9 +139,16 @@ struct DayProgress {
 }
 
 extension WorkoutViewModel {
+    var selectedDay: String? {
+        didSet {
+            // Clear current sets when changing days
+            if oldValue != selectedDay {
+                currentSets.removeAll()
+            }
+        }
+    }
+    
     func getTodaysProgress(for day: String) -> DayProgress {
-        // For now return mock data, we'll implement this properly later
-        let isToday = Calendar.current.isDateInToday(Date())
         let hasWorkout = !currentSets.isEmpty && selectedDay == day
         
         if hasWorkout {
@@ -266,6 +275,9 @@ struct DayDetailView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            viewModel.selectedDay = day
         }
     }
 } 
