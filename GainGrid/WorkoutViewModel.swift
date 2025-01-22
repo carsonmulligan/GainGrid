@@ -3,7 +3,7 @@ import Foundation
 class WorkoutViewModel: ObservableObject {
     private let dataService = LocalDataService()
     
-    @Published var workoutPlan: [String: (warmUp: String, workouts: [String], cardio: String)] = [:]
+    @Published var workoutPlan: [String: WorkoutPlanSettings.DayPlan] = [:]
     @Published var currentSets: [WorkoutSet] = []
     @Published var commitsByDate: [Date: Int] = [:]
     @Published var selectedDay: String? {
@@ -16,19 +16,21 @@ class WorkoutViewModel: ObservableObject {
     }
     
     private var workoutHistory: [String: [WorkoutHistory]] = [:]
+    private var exerciseHistory: [String: [WorkoutSet]] = [:]
     
     init() {
         loadWorkoutPlan()
         loadCommits()
+        loadHistory()
     }
     
     // MARK: - Workout Plan Management
     private func loadWorkoutPlan() {
         let plan = dataService.loadWorkoutPlan()
         
-        // Convert the Any dictionary to our typed tuple format
+        // Convert the Any dictionary to our typed format
         for (day, details) in plan {
-            workoutPlan[day] = (
+            workoutPlan[day] = WorkoutPlanSettings.DayPlan(
                 warmUp: details["Warm-Up"] as? String ?? "",
                 workouts: details["Workouts"] as? [String] ?? [],
                 cardio: details["Cardio"] as? String ?? ""
@@ -37,19 +39,45 @@ class WorkoutViewModel: ObservableObject {
     }
     
     // MARK: - History Management
+    private func loadHistory() {
+        // Load history for each day
+        for day in workoutPlan.keys {
+            workoutHistory[day] = dataService.loadWorkoutHistory(for: day)
+            
+            // Build exercise history
+            for workout in workoutHistory[day] ?? [] {
+                for set in workout.sets {
+                    if exerciseHistory[set.exerciseName] == nil {
+                        exerciseHistory[set.exerciseName] = []
+                    }
+                    exerciseHistory[set.exerciseName]?.append(set)
+                }
+            }
+        }
+    }
+    
     func getLastWorkout(for day: String) -> WorkoutHistory? {
-        return dataService.getLastWorkout(for: day)
+        return workoutHistory[day]?.last
     }
     
     func getWorkoutHistory(for day: String) -> [WorkoutHistory] {
-        return dataService.loadWorkoutHistory(for: day)
+        return workoutHistory[day] ?? []
+    }
+    
+    func getExerciseHistory(for exercise: String) -> [WorkoutHistory] {
+        // Group sets by date to create WorkoutHistory objects
+        let sets = exerciseHistory[exercise] ?? []
+        let groupedSets = Dictionary(grouping: sets) { set in
+            Calendar.current.startOfDay(for: set.date)
+        }
+        
+        return groupedSets.map { date, sets in
+            WorkoutHistory(id: UUID(), date: date, sets: sets.sorted { $0.date < $1.date })
+        }.sorted { $0.date > $1.date }
     }
     
     func getLastWeight(for exercise: String, day: String) -> String? {
-        return dataService.loadWorkoutHistory(for: day)
-            .flatMap { $0.sets }
-            .first { $0.exerciseName == exercise }?
-            .weight
+        return exerciseHistory[exercise]?.last?.weight
     }
     
     // MARK: - Set Management
@@ -62,6 +90,12 @@ class WorkoutViewModel: ObservableObject {
             date: Date()
         )
         currentSets.append(newSet)
+        
+        // Update exercise history immediately
+        if exerciseHistory[exerciseName] == nil {
+            exerciseHistory[exerciseName] = []
+        }
+        exerciseHistory[exerciseName]?.append(newSet)
     }
     
     func updateSet(existingSet: WorkoutSet, exerciseName: String, weight: String, reps: Int, notes: String?) {
@@ -75,6 +109,11 @@ class WorkoutViewModel: ObservableObject {
                 date: existingSet.date
             )
             currentSets[index] = updatedSet
+            
+            // Update exercise history
+            if let historyIndex = exerciseHistory[exerciseName]?.firstIndex(where: { $0.id == existingSet.id }) {
+                exerciseHistory[exerciseName]?[historyIndex] = updatedSet
+            }
         }
     }
     
@@ -84,6 +123,13 @@ class WorkoutViewModel: ObservableObject {
         
         // Save workout history
         dataService.saveWorkoutHistory(day: day, sets: currentSets)
+        
+        // Update local history
+        if workoutHistory[day] == nil {
+            workoutHistory[day] = []
+        }
+        let workout = WorkoutHistory(id: UUID(), date: Date(), sets: currentSets)
+        workoutHistory[day]?.append(workout)
         
         // Create and save commit
         let markdown = dataService.generateMarkdownFromSets(currentSets)
