@@ -15,11 +15,20 @@ struct WeeklyView: View {
                         GridItem(.flexible())
                     ], spacing: 20) {
                         ForEach(viewModel.workoutPlan.keys.sorted(), id: \.self) { day in
-                            DayCard(day: day, exercises: viewModel.workoutPlan[day] ?? [])
-                                .onTapGesture {
-                                    selectedDay = day
-                                    showingDayDetail = true
-                                }
+                            DayCard(
+                                day: day,
+                                isSelected: day == selectedDay,
+                                workoutPlan: (
+                                    warmUp: "",
+                                    workouts: viewModel.workoutPlan[day] ?? [],
+                                    cardio: ""
+                                ),
+                                progress: DayProgress(completedSets: nil)
+                            )
+                            .onTapGesture {
+                                selectedDay = day
+                                showingDayDetail = true
+                            }
                         }
                     }
                     .padding()
@@ -42,29 +51,4 @@ struct WeeklyView: View {
 #Preview {
     WeeklyView()
         .environmentObject(WorkoutViewModel())
-}
-
-struct DayCard: View {
-    let day: String
-    let exercises: [String]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(day)
-                    .font(.headline)
-                Spacer()
-            }
-            
-            ForEach(exercises, id: \.self) { exercise in
-                Text("• \(exercise)")
-                    .font(.subheadline)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(radius: 2)
-    }
 } 
