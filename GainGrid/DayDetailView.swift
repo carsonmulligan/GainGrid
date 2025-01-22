@@ -1,97 +1,85 @@
 import SwiftUI
 
 struct DayDetailView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var viewModel: WorkoutViewModel
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var viewModel: WorkoutViewModel
     let day: String
-    
-    @State private var showingHistory = false
-    
-    private let backgroundColor = Color(hex: "0D1117")
-    private let textColor = Color(hex: "C9D1D9")
-    private let secondaryColor = Color(hex: "161B22")
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     if let plan = viewModel.workoutPlan[day] {
-                        // Quick Commit Section
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Quick Commit")
-                                .font(.title2)
-                                .foregroundColor(textColor)
+                        // Warm-up Section
+                        if !plan.warmUp.isEmpty {
+                            Text("Warm-up")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
                             
-                            if let lastWorkout = viewModel.getLastWorkout(for: day) {
-                                Text("Last workout: \(lastWorkout.date.formatted(.dateTime.month().day()))")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            ForEach(plan.workouts, id: \.self) { workout in
-                                ExerciseCommitCard(
-                                    exercise: workout,
-                                    lastWeight: viewModel.getLastWeight(for: workout, day: day),
-                                    onCommit: { weight, reps in
-                                        viewModel.addSet(
-                                            exerciseName: workout,
-                                            weight: weight,
-                                            reps: reps,
-                                            notes: nil
-                                        )
-                                    }
-                                )
-                            }
-                            
-                            if !viewModel.currentSets.isEmpty {
-                                Button(action: {
-                                    viewModel.commitSession(for: day)
-                                    presentationMode.wrappedValue.dismiss()
-                                }) {
-                                    Text("Commit Workout")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(Color(hex: "39D353"))
-                                        .cornerRadius(8)
-                                }
-                            }
+                            Text(plan.warmUp)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color(.systemBackground))
+                                .cornerRadius(12)
                         }
-                        .padding()
+                        
+                        // Workouts Section
+                        Text("Workouts")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                        
+                        ForEach(plan.workouts, id: \.self) { exercise in
+                            ExerciseCommitCard(exerciseName: exercise, day: day)
+                        }
+                        
+                        // Cardio Section
+                        if !plan.cardio.isEmpty {
+                            Text("Cardio")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
+                            
+                            Text(plan.cardio)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color(.systemBackground))
+                                .cornerRadius(12)
+                        }
+                        
+                        // Commit Button
+                        Button(action: {
+                            viewModel.commitSession(for: day)
+                            dismiss()
+                        }) {
+                            Text("Complete Workout")
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(12)
+                        }
+                        .padding(.top)
+                        .disabled(viewModel.currentSets.isEmpty)
+                    } else {
+                        Text("Rest Day")
+                            .font(.title)
+                            .foregroundColor(.secondary)
                     }
                 }
+                .padding()
             }
-            .background(backgroundColor)
             .navigationTitle(day)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                    .foregroundColor(.blue)
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        // Add custom set
-                    }) {
-                        Image(systemName: "plus")
-                            .foregroundColor(textColor)
-                    }
-                }
-            }
-        }
-        .onAppear {
-            viewModel.selectedDay = day
+            .navigationBarItems(trailing: Button("Done") { dismiss() })
         }
     }
 }
 
 struct ExerciseCommitCard: View {
-    let exercise: String
-    let lastWeight: String?
-    let onCommit: (String, Int) -> Void
+    let exerciseName: String
+    let day: String
     
     @State private var weight: String = "50"  // Default weight
     @State private var reps: Int = 8          // Default reps
@@ -103,7 +91,7 @@ struct ExerciseCommitCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(exercise)
+            Text(exerciseName)
                 .font(.headline)
                 .foregroundColor(.white)
                 .lineLimit(2)
@@ -127,7 +115,12 @@ struct ExerciseCommitCard: View {
                 
                 // Commit Button
                 Button(action: {
-                    onCommit(weight, reps)
+                    viewModel.addSet(
+                        exerciseName: exerciseName,
+                        weight: weight,
+                        reps: reps,
+                        notes: nil
+                    )
                     if currentSet < totalSets {
                         currentSet += 1
                     }
@@ -146,7 +139,7 @@ struct ExerciseCommitCard: View {
                 
                 Spacer()
                 
-                if let lastWeight = lastWeight {
+                if let lastWeight = viewModel.getLastWeight(for: exerciseName, day: day) {
                     Text("Last: \(lastWeight)")
                         .font(.caption)
                         .foregroundColor(.gray)
