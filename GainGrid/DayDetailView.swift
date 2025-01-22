@@ -5,13 +5,11 @@ struct DayDetailView: View {
     @ObservedObject var viewModel: WorkoutViewModel
     let day: String
     
-    @State private var showingAddSetSheet = false
-    @State private var selectedSet: WorkoutSet?
-    @State private var selectedExercise: String?
     @State private var showingHistory = false
     
     private let backgroundColor = Color(hex: "0D1117")
     private let textColor = Color(hex: "C9D1D9")
+    private let secondaryColor = Color(hex: "161B22")
     
     var body: some View {
         NavigationView {
@@ -30,16 +28,16 @@ struct DayDetailView: View {
                                     .foregroundColor(.gray)
                             }
                             
-                            ForEach(Array(plan.workouts.enumerated()), id: \.element) { index, workout in
-                                QuickCommitRow(
+                            ForEach(plan.workouts, id: \.self) { workout in
+                                ExerciseCommitCard(
                                     exercise: workout,
                                     lastWeight: viewModel.getLastWeight(for: workout, day: day),
-                                    onCommit: { weight, reps, notes in
+                                    onCommit: { weight, reps in
                                         viewModel.addSet(
                                             exerciseName: workout,
                                             weight: weight,
                                             reps: reps,
-                                            notes: notes
+                                            notes: nil
                                         )
                                     }
                                 )
@@ -61,27 +59,6 @@ struct DayDetailView: View {
                             }
                         }
                         .padding()
-                        
-                        // History Section
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("History")
-                                    .font(.title2)
-                                    .foregroundColor(textColor)
-                                Spacer()
-                                Button(action: { showingHistory.toggle() }) {
-                                    Text(showingHistory ? "Hide" : "Show")
-                                        .foregroundColor(Color(hex: "58A6FF"))
-                                }
-                            }
-                            
-                            if showingHistory {
-                                ForEach(viewModel.getWorkoutHistory(for: day), id: \.date) { workout in
-                                    WorkoutHistoryCard(workout: workout)
-                                }
-                            }
-                        }
-                        .padding()
                     }
                 }
             }
@@ -93,20 +70,16 @@ struct DayDetailView: View {
                     Button("Done") {
                         presentationMode.wrappedValue.dismiss()
                     }
+                    .foregroundColor(.blue)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        selectedSet = nil
-                        selectedExercise = nil
-                        showingAddSetSheet = true
+                        // Add custom set
                     }) {
                         Image(systemName: "plus")
                             .foregroundColor(textColor)
                     }
                 }
-            }
-            .sheet(isPresented: $showingAddSetSheet) {
-                AddSetView(viewModel: viewModel, existingSet: selectedSet, prefilledExercise: selectedExercise)
             }
         }
         .onAppear {
@@ -115,36 +88,49 @@ struct DayDetailView: View {
     }
 }
 
-struct QuickCommitRow: View {
+struct ExerciseCommitCard: View {
     let exercise: String
     let lastWeight: String?
-    let onCommit: (String, Int, String?) -> Void
+    let onCommit: (String, Int) -> Void
     
-    @State private var weight: String = ""
-    @State private var reps: Int = 1
-    @State private var notes: String = ""
+    @State private var weight: String = "50"  // Default weight
+    @State private var reps: Int = 8          // Default reps
+    @State private var currentSet: Int = 1
+    private let totalSets: Int = 3            // Default sets
+    
+    private let backgroundColor = Color(hex: "161B22")
+    private let textColor = Color(hex: "C9D1D9")
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(exercise)
                 .font(.headline)
                 .foregroundColor(.white)
+                .lineLimit(2)
             
-            HStack {
-                TextField("Weight", text: $weight)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.decimalPad)
-                    .frame(width: 80)
+            HStack(spacing: 16) {
+                // Weight Input
+                VStack(alignment: .leading) {
+                    TextField("Weight", text: $weight)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .keyboardType(.decimalPad)
+                        .frame(width: 80)
+                }
                 
-                Stepper("Reps: \(reps)", value: $reps, in: 1...50)
-                    .frame(width: 120)
+                // Reps Stepper
+                VStack(alignment: .leading) {
+                    Stepper("Reps: \(reps)", value: $reps, in: 1...50)
+                        .foregroundColor(textColor)
+                }
                 
+                Spacer()
+                
+                // Commit Button
                 Button(action: {
-                    guard !weight.isEmpty else { return }
-                    onCommit(weight, reps, notes.isEmpty ? nil : notes)
-                    weight = ""
-                    reps = 1
-                    notes = ""
+                    onCommit(weight, reps)
+                    if currentSet < totalSets {
+                        currentSet += 1
+                    }
                 }) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Color(hex: "39D353"))
@@ -152,14 +138,23 @@ struct QuickCommitRow: View {
                 }
             }
             
-            if let lastWeight = lastWeight {
-                Text("Last: \(lastWeight)")
+            // Progress and Last Weight
+            HStack {
+                Text("Set \(currentSet) of \(totalSets)")
                     .font(.caption)
                     .foregroundColor(.gray)
+                
+                Spacer()
+                
+                if let lastWeight = lastWeight {
+                    Text("Last: \(lastWeight)")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
             }
         }
         .padding()
-        .background(Color(hex: "161B22"))
+        .background(backgroundColor)
         .cornerRadius(8)
     }
 }
