@@ -44,7 +44,7 @@ struct WeeklyView: View {
     }
 }
 
-@retroactive extension String: Identifiable {
+extension String: Identifiable {
     public var id: String { self }
 }
 
