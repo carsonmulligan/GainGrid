@@ -3,7 +3,7 @@ import SwiftUI
 struct DayCard: View {
     let day: String
     let isSelected: Bool
-    let workoutPlan: (warmUp: String, workouts: [String], cardio: String)?
+    let workoutPlan: WorkoutPlanSettings.DayPlan
     let progress: DayProgress
     
     private let backgroundColor = Color(.systemBackground)
@@ -21,25 +21,19 @@ struct DayCard: View {
                 }
             }
             
-            if let plan = workoutPlan {
-                if !plan.warmUp.isEmpty {
-                    Text("Warm-up: \(plan.warmUp)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                ForEach(plan.workouts, id: \.self) { workout in
-                    Text("• \(workout)")
-                        .font(.subheadline)
-                }
-                
-                if !plan.cardio.isEmpty {
-                    Text("Cardio: \(plan.cardio)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-            } else {
-                Text("Rest Day")
+            if !workoutPlan.warmUp.isEmpty {
+                Text("Warm-up: \(workoutPlan.warmUp)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            ForEach(workoutPlan.workouts, id: \.self) { workout in
+                Text("• \(workout)")
+                    .font(.subheadline)
+            }
+            
+            if !workoutPlan.cardio.isEmpty {
+                Text("Cardio: \(workoutPlan.cardio)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
