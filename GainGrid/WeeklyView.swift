@@ -34,6 +34,7 @@ struct WeeklyView: View {
             .navigationTitle("Workout Plan")
             .sheet(item: $selectedDay) { day in
                 DayDetailView(day: day)
+                    .environmentObject(viewModel)
             }
         }
     }
