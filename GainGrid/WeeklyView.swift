@@ -19,7 +19,7 @@ struct WeeklyView: View {
                                 day: day,
                                 isSelected: day == selectedDay,
                                 workoutPlan: viewModel.workoutPlan[day] ?? WorkoutPlanSettings.DayPlan(warmUp: "", workouts: [], cardio: ""),
-                                progress: DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
+                                progress: viewModel.getTodaysProgress(for: day)
                             )
                             .onTapGesture {
                                 selectedDay = day
@@ -28,6 +28,8 @@ struct WeeklyView: View {
                         }
                     }
                     .padding()
+                    
+                    ActivityGrid(viewModel: viewModel)
                 }
             }
             .navigationTitle("Weekly Plan")
@@ -37,6 +39,56 @@ struct WeeklyView: View {
                 }
             }
         }
+    }
+}
+
+struct ActivityGrid: View {
+    let viewModel: WorkoutViewModel
+    let calendar = Calendar.current
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Activity")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                ForEach(getLastYear(), id: \.self) { date in
+                    ActivitySquare(intensity: getIntensity(for: date))
+                }
+            }
+            .padding()
+        }
+    }
+    
+    private func getLastYear() -> [Date] {
+        let today = Date()
+        let yearAgo = calendar.date(byAdding: .year, value: -1, to: today)!
+        
+        var dates: [Date] = []
+        var currentDate = yearAgo
+        
+        while currentDate <= today {
+            dates.append(currentDate)
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        }
+        
+        return dates
+    }
+    
+    private func getIntensity(for date: Date) -> Double {
+        let commits = viewModel.commitsByDate[calendar.startOfDay(for: date)] ?? 0
+        return commits == 0 ? 0 : Double(commits) / 5.0
+    }
+}
+
+struct ActivitySquare: View {
+    let intensity: Double // 0.0 to 1.0
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(Color.green.opacity(intensity))
+            .frame(width: 10, height: 10)
     }
 }
 
