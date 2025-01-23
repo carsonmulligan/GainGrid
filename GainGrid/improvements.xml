@@ -76,7 +76,7 @@
         <description>
             Implement robust local storage using JSON files for user data, workouts,
             and progress tracking. Each user gets their own directory with separate
-            files for different data types.
+            files for different data types
         </description>
         <implementation>
             <fileStructure>
