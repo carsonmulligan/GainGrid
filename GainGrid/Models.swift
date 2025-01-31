@@ -4,6 +4,8 @@ struct DayProgress {
     let isComplete: Bool
     let completedSets: Int?
     let totalWeight: Int?
+    
+    static let empty = DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
 }
 
 struct WorkoutSet: Identifiable, Codable {
@@ -74,4 +76,26 @@ struct WorkoutPlanSettings: Codable {
     }
     
     static let empty = WorkoutPlanSettings(days: [:])
+}
+
+enum WorkoutType: String, Codable {
+    case warmUp = "Warm-Up"
+    case main = "Main"
+    case cardio = "Cardio"
+}
+
+struct Exercise: Identifiable, Codable {
+    let id: UUID
+    let name: String
+    let type: WorkoutType
+    let targetSets: Int
+    let targetReps: ClosedRange<Int>
+    
+    init(id: UUID = UUID(), name: String, type: WorkoutType, targetSets: Int, targetReps: ClosedRange<Int>) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.targetSets = targetSets
+        self.targetReps = targetReps
+    }
 } 
