@@ -4,11 +4,10 @@ class WorkoutViewModel: ObservableObject {
     private let dataService = LocalDataService()
     
     @Published var workoutPlan: [String: WorkoutPlanSettings.DayPlan] = [:]
-    @Published var currentSets: [WorkoutSet] = []
+    @Published var currentSets: [String: [WorkoutSet]] = [:]
     @Published var commitsByDate: [Date: Int] = [:]
     @Published var selectedDay: String? {
         didSet {
-            // Clear current sets when changing days
             if oldValue != selectedDay {
                 currentSets.removeAll()
             }
@@ -24,147 +23,80 @@ class WorkoutViewModel: ObservableObject {
         loadHistory()
     }
     
-    // MARK: - Workout Plan Management
-    private func loadWorkoutPlan() {
-        let plan = dataService.loadWorkoutPlan()
-        
-        // Convert the Any dictionary to our typed format
-        for (day, details) in plan {
-            workoutPlan[day] = WorkoutPlanSettings.DayPlan(
-                warmUp: details["Warm-Up"] as? String ?? "",
-                workouts: details["Workouts"] as? [String] ?? [],
-                cardio: details["Cardio"] as? String ?? ""
-            )
+    // MARK: - Set Management
+    func addSet(_ set: WorkoutSet) {
+        if currentSets[set.exerciseName] == nil {
+            currentSets[set.exerciseName] = []
         }
+        currentSets[set.exerciseName]?.append(set)
+        objectWillChange.send()
+    }
+    
+    func getCurrentSets(for exercise: String, on day: String) -> [WorkoutSet]? {
+        return currentSets[exercise]
     }
     
     // MARK: - History Management
-    private func loadHistory() {
-        // Load history for each day
-        for day in workoutPlan.keys {
-            workoutHistory[day] = dataService.loadWorkoutHistory(for: day)
-            
-            // Build exercise history
-            for workout in workoutHistory[day] ?? [] {
-                for set in workout.sets {
-                    if exerciseHistory[set.exerciseName] == nil {
-                        exerciseHistory[set.exerciseName] = []
-                    }
-                    exerciseHistory[set.exerciseName]?.append(set)
-                }
-            }
-        }
-    }
-    
-    func getLastWorkout(for day: String) -> WorkoutHistory? {
-        return workoutHistory[day]?.last
-    }
-    
-    func getWorkoutHistory(for day: String) -> [WorkoutHistory] {
-        return workoutHistory[day] ?? []
-    }
-    
     func getExerciseHistory(for exercise: String) -> [WorkoutHistory] {
-        // Group sets by date to create WorkoutHistory objects
-        let sets = exerciseHistory[exercise] ?? []
-        let groupedSets = Dictionary(grouping: sets) { set in
-            Calendar.current.startOfDay(for: set.date)
-        }
-        
-        return groupedSets.map { date, sets in
-            WorkoutHistory(id: UUID(), date: date, sets: sets.sorted { $0.date < $1.date })
-        }.sorted { $0.date > $1.date }
+        return workoutHistory[exercise] ?? []
     }
     
-    func getLastWeight(for exercise: String, day: String) -> String? {
-        return exerciseHistory[exercise]?.last?.weight
+    func getPersonalRecords(for exercise: String) -> [PersonalRecord]? {
+        // TODO: Implement personal records tracking
+        return nil
     }
     
-    // MARK: - Set Management
-    func addSet(exerciseName: String, weight: String, reps: Int, notes: String?) {
-        let newSet = WorkoutSet(
-            exerciseName: exerciseName,
-            notes: notes,
-            weight: weight,
-            reps: reps,
-            date: Date()
-        )
-        currentSets.append(newSet)
-        
-        // Update exercise history immediately
-        if exerciseHistory[exerciseName] == nil {
-            exerciseHistory[exerciseName] = []
-        }
-        exerciseHistory[exerciseName]?.append(newSet)
-    }
-    
-    func updateSet(existingSet: WorkoutSet, exerciseName: String, weight: String, reps: Int, notes: String?) {
-        if let index = currentSets.firstIndex(where: { $0.id == existingSet.id }) {
-            let updatedSet = WorkoutSet(
-                id: existingSet.id,
-                exerciseName: exerciseName,
-                notes: notes,
-                weight: weight,
-                reps: reps,
-                date: existingSet.date
-            )
-            currentSets[index] = updatedSet
-            
-            // Update exercise history
-            if let historyIndex = exerciseHistory[exerciseName]?.firstIndex(where: { $0.id == existingSet.id }) {
-                exerciseHistory[exerciseName]?[historyIndex] = updatedSet
-            }
-        }
-    }
-    
-    // MARK: - Commit Management
     func commitSession(for day: String) {
         guard !currentSets.isEmpty else { return }
         
-        // Save workout history
-        dataService.saveWorkoutHistory(day: day, sets: currentSets)
-        
-        // Update local history
-        if workoutHistory[day] == nil {
-            workoutHistory[day] = []
+        // Create workout history entries for each exercise
+        for (exercise, sets) in currentSets {
+            let history = WorkoutHistory(date: Date(), sets: sets)
+            if workoutHistory[exercise] == nil {
+                workoutHistory[exercise] = []
+            }
+            workoutHistory[exercise]?.append(history)
         }
-        let workout = WorkoutHistory(id: UUID(), date: Date(), sets: currentSets)
-        workoutHistory[day]?.append(workout)
         
-        // Create and save commit
-        let markdown = dataService.generateMarkdownFromSets(currentSets)
-        let commit = LocalCommit(
-            message: "Completed \(day) workout",
-            timestamp: Date(),
-            fileName: "workout_\(Date().timeIntervalSince1970).md",
-            content: markdown
-        )
+        // Update commit count for today
+        let today = Calendar.current.startOfDay(for: Date())
+        commitsByDate[today] = (commitsByDate[today] ?? 0) + 1
         
-        dataService.saveCommit(commit)
+        // Save everything
+        dataService.saveWorkoutHistory(workoutHistory)
+        dataService.saveCommits(commitsByDate)
+        
+        // Clear current session
         currentSets.removeAll()
-        loadCommits()
+        objectWillChange.send()
+    }
+    
+    // MARK: - Workout Plan Management
+    private func loadWorkoutPlan() {
+        workoutPlan = dataService.loadWorkoutPlan()
     }
     
     private func loadCommits() {
-        let commits = dataService.loadAllCommits()
-        let calendar = Calendar.current
-        
-        commitsByDate = Dictionary(grouping: commits) { commit in
-            calendar.startOfDay(for: commit.timestamp)
-        }.mapValues { $0.count }
+        commitsByDate = dataService.loadCommits()
     }
     
-    func getTodaysProgress(for day: String) -> DayProgress {
-        let hasWorkout = !currentSets.isEmpty && selectedDay == day
-        
-        if hasWorkout {
-            let totalSets = currentSets.count
-            let totalWeight = currentSets.reduce(0) { total, set in
-                total + (Int(set.weight.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) ?? 0)
-            }
-            return DayProgress(isComplete: false, completedSets: totalSets, totalWeight: totalWeight)
-        } else {
-            return DayProgress(isComplete: false, completedSets: nil, totalWeight: nil)
-        }
+    private func loadHistory() {
+        workoutHistory = dataService.loadWorkoutHistory()
     }
+}
+
+// MARK: - Supporting Types
+struct WorkoutPlanSettings {
+    struct DayPlan {
+        let warmUp: String
+        let workouts: [String]
+        let cardio: String
+    }
+}
+
+struct PersonalRecord: Identifiable {
+    let id = UUID()
+    let type: String
+    let value: Double
+    let date: Date
 } 
