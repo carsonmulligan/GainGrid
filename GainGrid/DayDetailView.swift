@@ -166,7 +166,13 @@ struct ExerciseCommitCard: View {
         .cornerRadius(12)
         .shadow(radius: 2)
         .sheet(isPresented: $showingAddSet) {
-            AddSetView(exerciseName: exerciseName, day: day)
+            NavigationView {
+                AddSetView(exerciseName: exerciseName, day: day)
+                    .navigationTitle("Add Set")
+                    .navigationBarItems(leading: Button("Cancel") {
+                        showingAddSet = false
+                    })
+            }
         }
         .sheet(isPresented: $showingHistory) {
             ExerciseHistoryView(exerciseName: exerciseName)
