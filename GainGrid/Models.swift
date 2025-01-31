@@ -54,18 +54,6 @@ struct LocalCommit: Identifiable, Codable {
     }
 }
 
-// Default workout plan structure
-struct WorkoutDay: Codable {
-    struct Workout: Codable {
-        let warmUp: String
-        let workouts: [String]
-        let cardio: String
-    }
-    
-    let workouts: [String: Workout]
-}
-
-// Settings structure for workout plan customization
 struct WorkoutPlanSettings: Codable {
     var days: [String: DayPlan]
     
