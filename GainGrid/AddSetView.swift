@@ -1,45 +1,37 @@
 import SwiftUI
 
 struct AddSetView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var viewModel: WorkoutViewModel
-    let existingSet: WorkoutSet?
-    let prefilledExercise: String?
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var viewModel: WorkoutViewModel
     
-    @State private var exerciseName: String
-    @State private var weight: String
-    @State private var reps: Int
-    @State private var notes: String
+    let exerciseName: String
+    let day: String
+    let setInfo: String
+    let existingSet: WorkoutSet?
+    
+    @State private var weight: String = ""
+    @State private var reps: Int = 8
+    @State private var notes: String = ""
     @State private var selectedUnit: WeightUnit = .lbs
     @State private var showingHistory = false
     
-    init(viewModel: WorkoutViewModel, existingSet: WorkoutSet? = nil, prefilledExercise: String? = nil) {
-        self.viewModel = viewModel
+    init(exerciseName: String, day: String, existingSet: WorkoutSet? = nil) {
+        self.exerciseName = exerciseName
+        self.day = day
         self.existingSet = existingSet
-        self.prefilledExercise = prefilledExercise
         
-        // Initialize state with existing values, prefilled exercise, or defaults
-        _exerciseName = State(initialValue: existingSet?.exerciseName ?? prefilledExercise ?? "")
-        _weight = State(initialValue: existingSet?.weight ?? "")
-        _reps = State(initialValue: existingSet?.reps ?? 1)
-        _notes = State(initialValue: existingSet?.notes ?? "")
+        // Create set info string based on exercise name
+        var info = ""
+        if let range = exerciseName.range(of: "\\d+(?:-\\d+)? (?:reps|sets)", options: .regularExpression) {
+            info = String(exerciseName[range])
+        }
+        self.setInfo = info
         
-        // Extract reps from exercise description if available
-        if let exercise = prefilledExercise {
-            if let repsRange = exercise.range(of: "\\d+(?:-\\d+)? reps", options: .regularExpression) {
-                let repsText = exercise[repsRange]
-                if let firstNumber = repsText.components(separatedBy: CharacterSet.decimalDigits.inverted).first,
-                   let defaultReps = Int(firstNumber) {
-                    _reps = State(initialValue: defaultReps)
-                }
-            }
-            
-            // Extract weight description if available
-            if exercise.contains("heavy") {
-                _notes = State(initialValue: "Heavy weight")
-            } else if exercise.contains("Light") {
-                _notes = State(initialValue: "Light weight")
-            }
+        // Initialize state properties if editing existing set
+        if let set = existingSet {
+            _weight = State(initialValue: set.weight)
+            _reps = State(initialValue: set.reps)
+            _notes = State(initialValue: set.notes ?? "")
         }
     }
     
@@ -129,7 +121,7 @@ struct AddSetView: View {
                 
                 Button(action: {
                     saveSet()
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Text("Save Set")
                         .fontWeight(.semibold)
@@ -142,32 +134,6 @@ struct AddSetView: View {
             }
         }
         .padding()
-        .navigationTitle(existingSet != nil ? "Edit Set" : "Add Set")
-        .navigationBarItems(
-            leading: Button("Cancel") {
-                presentationMode.wrappedValue.dismiss()
-            },
-            trailing: Button(existingSet != nil ? "Update" : "Save") {
-                if let existingSet = existingSet {
-                    viewModel.updateSet(
-                        existingSet: existingSet,
-                        exerciseName: exerciseName,
-                        weight: weight,
-                        reps: reps,
-                        notes: notes.isEmpty ? nil : notes
-                    )
-                } else {
-                    viewModel.addSet(
-                        exerciseName: exerciseName,
-                        weight: weight,
-                        reps: reps,
-                        notes: notes.isEmpty ? nil : notes
-                    )
-                }
-                presentationMode.wrappedValue.dismiss()
-            }
-            .disabled(exerciseName.isEmpty || weight.isEmpty)
-        )
         .sheet(isPresented: $showingHistory) {
             ExerciseHistoryView(exerciseName: exerciseName)
         }
