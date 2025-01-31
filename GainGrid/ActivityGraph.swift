@@ -1,47 +1,72 @@
 import SwiftUI
 
 struct ActivityGraph: View {
-    let commitsByDate: [Date: Int]
+    let viewModel: WorkoutViewModel
+    let calendar = Calendar.current
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Activity")
                 .font(.headline)
+                .padding(.horizontal)
             
-            HStack(alignment: .bottom, spacing: 2) {
-                ForEach(last90Days(), id: \.self) { date in
-                    let count = commitsByDate[date] ?? 0
-                    Rectangle()
-                        .fill(colorForCount(count))
-                        .frame(width: 10, height: heightForCount(count))
+            if viewModel.commitsByDate.isEmpty {
+                EmptyStateView()
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                    ForEach(getLastYear(), id: \.self) { date in
+                        ActivitySquare(intensity: getIntensity(for: date))
+                    }
                 }
             }
         }
+        .padding()
     }
     
-    private func last90Days() -> [Date] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return (0..<90).map { days in
-            calendar.date(byAdding: .day, value: -days, to: today)!
-        }.reversed()
-    }
-    
-    private func colorForCount(_ count: Int) -> Color {
-        switch count {
-        case 0: return Color(.systemGray6)
-        case 1: return .blue.opacity(0.3)
-        case 2: return .blue.opacity(0.6)
-        default: return .blue
+    private func getLastYear() -> [Date] {
+        let today = Date()
+        let yearAgo = calendar.date(byAdding: .year, value: -1, to: today)!
+        
+        var dates: [Date] = []
+        var currentDate = yearAgo
+        
+        while currentDate <= today {
+            dates.append(currentDate)
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
         }
+        
+        return dates
     }
     
-    private func heightForCount(_ count: Int) -> CGFloat {
-        switch count {
-        case 0: return 10
-        case 1: return 20
-        case 2: return 30
-        default: return 40
+    private func getIntensity(for date: Date) -> Double {
+        let commits = viewModel.commitsByDate[calendar.startOfDay(for: date)] ?? 0
+        return commits == 0 ? 0 : Double(commits) / 5.0
+    }
+}
+
+struct EmptyStateView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 50))
+                .foregroundColor(.gray.opacity(0.3))
+            
+            Text("No Activity Yet")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            Text("Complete your first workout to start seeing your activity pattern here!")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("💪 Your progress will show up as a heatmap")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, minHeight: 200)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
     }
 } 
