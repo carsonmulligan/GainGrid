@@ -8,13 +8,9 @@ struct WeeklyView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 20) {
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 20) {
-                        ForEach(viewModel.workoutPlan.keys.sorted(), id: \.self) { day in
+                VStack(spacing: 0) {
+                    ForEach(viewModel.workoutPlan.keys.sorted(), id: \.self) { day in
+                        VStack(spacing: 0) {
                             DayCard(
                                 day: day,
                                 isSelected: day == selectedDay,
@@ -25,11 +21,20 @@ struct WeeklyView: View {
                                 selectedDay = day
                                 showingDayDetail = true
                             }
+                            
+                            if day != viewModel.workoutPlan.keys.sorted().last {
+                                Divider()
+                            }
                         }
                     }
-                    .padding()
+                    
+                    Text("Activity")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
                     
                     ActivityGrid(viewModel: viewModel)
+                        .padding(.horizontal)
                 }
             }
             .navigationTitle("Weekly Plan")
