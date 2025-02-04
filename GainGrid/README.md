@@ -8,7 +8,7 @@ A minimalist workout tracking app that helps you maintain consistency in your fi
 <app_description>
     <app_name>GainGrid</app_name>
     <purpose>
-        A fitness tracking application that gamifies workout consistency by treating exercise sessions as code commits, visualizing progress through a GitHub-style activity graph.
+        A fitness tracking application that gamifies workout consistency by treating exercise sessions as code commits, visualizing progress through a GitHub-style activity graph
     </purpose>
 
     <core_features>
